@@ -9,21 +9,56 @@
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
+   //id 'java'
+    id 'application'
 }
 
+// this variables
+def appVersion = '1.1.03'
+def appName = 'kk-common-lib'
+def appTitle = "Common-lib by KK" 
+def appMainClassName = 'kk.common.lib.CommonLibMain' 
+def appBaseName = 'kk-common-lib'
+def appPropertiesFullPath = "$projectDir/src/main/resources/app.properties"
+  
+/*
+println appName
+println appTitle 
+println appMainClassName 
+println appBaseName
+println appVersion
+println appPropertiesFullPath
+//println project.property('appFileName.property')
+*/
+
 //Current version app
-version =  '1.1.02'
+version = appVersion
 
 // Java Compatibility
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 //defaultTasks = ['clean', 'jar']
 
+// Application plugin config:
+mainClassName = appMainClassName
+// value to applicationName for create name file propertiese MUST to be without spaces (one word)
+applicationName = appName
+//applicationDefaultJvmArgs = ['-Xms128m', '-Xmx512m']
+//sourceSets.main.resources.srcDirs += [ "src/main/java" ]
+/*
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources", "src/main/configs"
+        }
+    }
+}
+*/
+
 repositories {
     // Use jcenter for resolving dependencies.
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
-
 }
 
 dependencies {
@@ -35,24 +70,61 @@ dependencies {
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
-
-	// Compile all jars from /libs
+    
+    // Compile all jars from $projectRoot
+	compile fileTree(dir: '.', include: '*.jar')
+    // Compile all jars from /libs
 	compile fileTree(dir: 'lib', include: '*.jar')
+	//compile fileTree(dir: 'lib', include: '*.jar')
 	// Compile jar from current folder
 	//compile files('PostgresqlService-1.1.01.jar','SOAPClientSAAJ-0.1.0.jar')
-	//compile fileTree(dir: '.', include: '*.jar')
+	
+	//compile 	'com.github.spullara.cli-parser:cli-parser:1.1.5'	
 }
+
+/*
+task addResFolder {
+    def resfolder = file("$buildDir/resources/main")
+    outputs.dir resfolder
+    doLast {
+        resfolder.mkdirs()
+    }
+}
+ 
+applicationDistribution.from(addResFolder) {
+    into "bin/src/main/resources"
+}
+*/
 
 // Auto create file version.properties how resources with current version 
 task createProperties() {
-  doLast {
+  doLast {         
+
+	List<String> list = new ArrayList<String>()
+	//list.add('111')
+	//list.add('222')
+
+	ConfigurableFileTree tree = fileTree(dir: '$buildDir')
+	tree = fileTree(dir: '.', include: '*.jar')
+	tree.each {File file ->
+		list.add(file.getName())
+		//println file.getName()
+	}
+	
     //new File("$buildDir/classes/java/main/resources/version.properties").withWriter { w ->
-    new File("$projectDir/src/main/resources/version.properties").withWriter { w ->
-    //new File("$projectDir/version.properties").withWriter { w ->
+    new File(appPropertiesFullPath).withWriter { w ->
         Properties p = new Properties()
+        p['applicationName'] = project.applicationName.toString()
         p['version'] = project.version.toString()
-        p.store w, null
-    }
+ 
+ 		for (int i = 0; i < list.size(); i++) {
+        	//println i; 
+          	//println list.get(i); 
+           	p['jarFileName.'+ i] = list.get(i);
+           	//p.writeline
+  			}
+    	p.store w, null
+    	}
   }
 }
 //processResources.dependsOn createProperties
@@ -60,14 +132,32 @@ classes {
     dependsOn createProperties
 }
 
+
+/*
+task displayProjectProperties {
+    doLast() {
+        for(Map.Entry p: project.getProperties()) {
+            println p;
+        }
+    }
+}
+
+task printProp {
+    doLast {
+        //println System.properties['mySystemPropA']
+        //println System.getProperty('mySystemPropA')
+        }
+}
+*/
+
 jar {
 
-    baseName = 'kk-common-lib'
+    baseName = appBaseName
 
     manifest {
-    	attributes	"Implementation-Title": "Common-lib by KK"
+    	attributes	"Implementation-Title": appTitle
         attributes	'Implementation-Version': version
-        attributes 	'Main-Class': 'kk.common.lib.CommonLibMain'
+        attributes 	'Main-Class': mainClassName 
         }
 
  doFirst {
@@ -78,8 +168,7 @@ jar {
                                 //configurations.runtime.collect{it.toURI().toString()}.join(' ')
                                 configurations.runtime.collect { it.name }.join(' ')
                                 )
-           		
-       		}
-   		}
-	}
+           	}
+       	}
+   	}
 }

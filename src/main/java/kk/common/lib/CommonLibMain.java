@@ -3,51 +3,76 @@
  */
 package kk.common.lib;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
- * @author Alex
+ * @author Alexander Kuznetsov
+ * @author Pavel Komarov
  *
  */
 public class CommonLibMain {
+	private static String appPropertiesFile;
+	private static String szEncoding;
+	private static boolean setDebug;
+	// конструктор для сбора текста в лог
+	private static StringBuffer sbLog = new StringBuffer();
 
 	/**
-	 * @param args
+	 * Присваиваем значения из AppConfig в отдельном методе, чтобы не делать этого
+	 * непосредственно в коде.
+	 * 
+	 * @param config
 	 */
-	public static void main(String[] args) {
+	public CommonLibMain(AppConfig config) {
+		// задаем установки логгера
+		LogApp.setPathLogFile(config.logFilePath);
+		LogApp.setLogFormat(config.logFormat);
+		LogApp.setOwnconsole(config.logOwnconsole);
+		LogApp.setAddInLog(config.logAddInLog);
+		setDebug = config.debugToLog;
 
-		System.out.println("kk-common-lib version: " + getVersion());
-
+		// читаем остальные значения из properties
+		appPropertiesFile = config.appPropertiesFile;
+		szEncoding = config.defaultEncoding;
 	}
 
-	/**
-	 * Получаем значение из version.properties, который создается автоматически в
-	 * /resources. После создания jar к этому файлу нет доступа как к файлу, поэтому
-	 * используем здесь getStreamFromResource и тогда имеем возможность получить
-	 * значения
-	 * 
-	 * @return String
-	 */
-	public static String getVersion() {
+	public static void main(String[] args) {
 
-		String strVersion = null;
-		String VersionPropsFileName = "version.properties";
+		// загрузим конфигурацию, чтобы можно было прочитать значения из properties
+		AppConfig config = new AppConfig();
+		new CommonLibMain(config);
 
-		InputStream inputStream = new PropertiesFile().getStreamFromResource(VersionPropsFileName);
-
-		Properties defaultProps = new Properties();
-		try {
-			defaultProps.load(inputStream);
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
+		if (args.length != 1 || args.equals(null)) {
+			printUsage();
+			return;
 		}
 
-		strVersion = defaultProps.getProperty("version");
-		// System.out.println("version = " + strVersion);
+		String arg_0 = args[0].toUpperCase().toLowerCase().trim();
+		if (arg_0.equals("run")) {
+			// тут ничего не делаем, если аргумент из перечисленных выше
+		} else {
+			if (arg_0.equals("version") || arg_0.equals("-v") || arg_0.equals("help") || arg_0.equals("-h")) {
+				if (arg_0.equals("-v") || arg_0.equals("version")) {
+					AppConfig.printAppVersion();
+					return;
+				}
+				if (arg_0.equals("-h") || arg_0.equals("help")) {
+					AppConfig.printAppHelp(szEncoding);
+					return;
+				}
+			} else {
+				printUsage();
+				return;
+			}
+		}
 
-		return strVersion;
+		if (arg_0.equals("run")) {
+			printUsage();
+		}
+	}
+
+	private static void printUsage() {
+		// System.out.println("Usage : java -jar " + AppConfig.getAppName() + "-" +
+		// AppConfig.getVersion() + ".jar <command>\n");
+		AppConfig.printAppVersion();
 	}
 
 }
